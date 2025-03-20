@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TSEW Job Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 800px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #searchForm {
+      margin-bottom: 20px;
+    }
+    #searchQuery {
+      width: 300px;
+      padding: 6px;
+    }
+    #searchButton {
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    #resultsContainer {
+      margin-top: 20px;
+    }
+    .job-result {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .job-result h2 {
+      margin: 0 0 8px 0;
+      font-size: 1.1em;
+    }
+    .job-result p {
+      margin: 0 0 10px 0;
+      font-size: 0.95em;
+    }
+    .job-result a {
+      text-decoration: none;
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Job Search (via Cloudflare Worker)</h1>
+
+  <div id="searchForm">
+    <input 
+      type="text" 
+      id="searchQuery" 
+      value="DevOps Outside IR35 Remote" 
+      placeholder="Enter your search keywords"
+    />
+    <button id="searchButton">Search</button>
+  </div>
+
+  <div id="resultsContainer">
+    <!-- Search results will appear here -->
+  </div>
+
+  <script>
+    const WORKER_ENDPOINT = '/search';
+
+    // On page load, automatically trigger a search with the default query:
+    window.addEventListener('load', () => {
+      performSearch();
+    });
+
+    // Search button click
+    document.getElementById('searchButton').addEventListener('click', performSearch);
+
+    function performSearch() {
+      const userQuery = document.getElementById('searchQuery').value.trim();
+      if (!userQuery) return;
+
+      // Build the URL with ?q= parameter
+      const url = WORKER_ENDPOINT + '?q=' + encodeURIComponent(userQuery);
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => renderResults(data))
+        .catch(err => {
+          console.error('Error:', err);
+          document.getElementById('resultsContainer').innerHTML = 
+            "<p style='color:red;'>Error fetching results. Check console for details.</p>";
+        });
+    }
+
+    function renderResults(searchData) {
+      const resultsContainer = document.getElementById('resultsContainer');
+      resultsContainer.innerHTML = ""; // Clear old results
+
+      if (!searchData.items || searchData.items.length === 0) {
+        resultsContainer.innerHTML = "<p>No results found.</p>";
+        return;
+      }
+
+      searchData.items.forEach(item => {
+        const resultDiv = document.createElement("div");
+        resultDiv.className = "job-result";
+
+        const titleElem = document.createElement("h2");
+        titleElem.textContent = item.title;
+
+        const snippetElem = document.createElement("p");
+        snippetElem.textContent = item.snippet;
+
+        const linkElem = document.createElement("a");
+        linkElem.href = item.link;
+        linkElem.target = "_blank";
+        linkElem.textContent = "View Job Listing";
+
+        resultDiv.appendChild(titleElem);
+        resultDiv.appendChild(snippetElem);
+        resultDiv.appendChild(linkElem);
+
+        resultsContainer.appendChild(resultDiv);
+      });
+    }
+  </script>
+
+</body>
+</html>
